@@ -1,0 +1,39 @@
+name: Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    permissions:
+      contents: read
+    
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+        platform: [Win32, x64, ARM64]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2
+    
+    - name: Build solution
+      run: msbuild FileCopy.sln /p:Configuration=${{ matrix.configuration }} /p:Platform=${{ matrix.platform }} /m
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ matrix.configuration }}-${{ matrix.platform }}
+        path: |
+          ${{ matrix.platform }}/${{ matrix.configuration }}/*.dll
+          ${{ matrix.platform }}/${{ matrix.configuration }}/*.exe
+        if-no-files-found: ignore
